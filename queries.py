@@ -5,4 +5,4 @@ selectSource = """
     WHERE sourceName = '{sourceName}'"""
 
 truncateStaging = """
-    TRUNCATE TABLE staging.{sourceName}_data"""
+    TRUNCATE TABLE staging.cases_data"""

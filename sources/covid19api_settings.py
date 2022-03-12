@@ -1,0 +1,1 @@
+covid19api_base_url = "https://api.covid19api.com"
