@@ -23,20 +23,22 @@ class covid19api(source):
             taskStartTime = datetime.now()
             logger.info(f"Fetching data from covid19api from {url}")
             json_data = requests.get(url).json()
+            for row in json_data:
+                row["Date"]=datetime.strptime(row["Date"], "%Y-%m-%dT%H:%M:%SZ")
             taskDuration = (datetime.now() - taskStartTime).total_seconds()
             logger.info(f"Fetched data from covid19api from {url} in {taskDuration} seconds")
             taskStartTime = datetime.now()
             logger.info(f"Writing to cases_data table")
             cnxn = self.connectDB()
             with cnxn.cursor() as cursor:
-                cursor.executemany(insertIntoStaging, json_data)
+                cursor.executemany(insertIntoStaging.format(sourceId=self.sourceId), json_data)
                 cnxn.commit()
                 cursor.close()
             taskDuration = (datetime.now() - taskStartTime).total_seconds()
             logger.info(f"Wrote to cases_data table")
             cnxn.close()
         except Exception as err:
-            logger.error(f"Failed to get data from {url}")
+            logger.error(f"Failed to ingest data from {url}")
             raise
         return
 

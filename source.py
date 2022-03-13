@@ -14,6 +14,7 @@ class source(ABC):
     # initialise database connection parameters and source name
     def __init__(self, sourceName):
         self.sourceName = sourceName
+        self.sourceId = None
         return self.validateSource()
 
     # function to connect to the cases database
@@ -27,7 +28,8 @@ class source(ABC):
             logger.info(f"Validating if {self.sourceName} source exists")
             with cnxn.cursor() as cursor:
                 cursor.execute(queries.selectSource.format(sourceName=self.sourceName))
-                if cursor.fetchone():
+                self.sourceId = cursor.fetchone()[0]
+                if self.sourceId:
                     logger.info(f"{self.sourceName} source exists")
                 else:
                     logger.warning(f"{self.sourceName} source doesn't exist!")

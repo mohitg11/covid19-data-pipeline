@@ -1,10 +1,11 @@
 import argparse
 from datetime import datetime, date
+from importlib import import_module
 import logging
 from multiprocessing.pool import ThreadPool as Pool
 import sys
 
-import mysql.connector
+from common import connectDB
 
 import settings as config
 import queries
@@ -24,47 +25,102 @@ logger = logging.getLogger(__name__)
 
 
 # Parse arguments passed to the script
-parser = argparse.ArgumentParser(description="DataSync service help menu")
-parser.add_argument(
-    "--mode",
-    "-m",
-    default="default",
-    choices=["full", "delta", "range", "default", "merge"],
-    type=str,
-    metavar="mode",
-    help="Define the load mode, either 'full' (full load from specified source from beginning of time), 'delta' (load number of days prior to sysdate from speified source), 'default' (load as defined in the loads db), or an explicit 'range' (as defined by the rangeStart and rangeEnd arguments from specified source, or merge (merge from the staging table he exisiting data)",
+parser = argparse.ArgumentParser(description="Get Covid-19 cases data data pipeline help menu")
+subparser = parser.add_subparsers(
+    dest="mode", help="Mode to ingest in", required=True
 )
-parser.add_argument(
+# Source and Country parent parser
+sourceCountryParser = argparse.ArgumentParser(add_help=False)
+sourceCountryParser.add_argument(
+    "--source",
+    "-s",
+    type=str,
+    metavar="source",
+    required=True,
+    help="Source to pull data from.",
+)
+sourceCountryParser.add_argument(
+    "--country",
+    "-c",
+    type=str,
+    metavar="country",
+    required=True,
+    help="Country to pull data for.",
+)
+# Between parent parser
+betweenParser = argparse.ArgumentParser(add_help=False)
+betweenParser.add_argument(
+    "--fromDate",
+    "-fd",
+    default=date.today(),
+    type=date.fromisoformat,
+    metavar="fromDate",
+    required=True,
+    help="Define the start date for the explicit range in ISO 8601 format (YYYY-MM-DD). Defaults to the current day",
+)
+betweenParser.add_argument(
+    "--toDate",
+    "-td",
+    default=date.today(),
+    type=date.fromisoformat,
+    metavar="toDate",
+    required=True,
+    help="Define the end date for the explicit range in ISO 8601 format (YYYY-MM-DD). Defaults to the current day",
+)
+# Delta parent parser
+deltaParser = argparse.ArgumentParser(add_help=False)
+deltaParser.add_argument(
     "--delta",
     "-d",
     default=4,
     type=int,
     metavar="delta",
+    required=True,
     help="Define number of days to go back from sysdate to load. Defaults to 4 days",
 )
-parser.add_argument(
-    "--rangeStart",
-    "-rs",
-    default=date.today(),
-    type=date.fromisoformat,
-    metavar="rangeStart",
-    help="Define the start date for the explicit range in ISO 8601 format (YYYY-MM-DD). Defaults to the current day",
+# full mode subparser
+fullSubparser = subparser.add_parser(
+    "full",
+    parents=[sourceCountryParser],
+    help="Full load from specified source from beginning of time",
 )
-parser.add_argument(
-    "--rangeEnd",
-    "-re",
-    default=date.today(),
-    type=date.fromisoformat,
-    metavar="rangeEnd",
-    help="Define the end date for the explicit range in ISO 8601 format (YYYY-MM-DD). Defaults to the current day",
+# default mode subparser
+defaultSubparser = subparser.add_parser(
+    "default",
+    help="Load as defined in the config loads table",
 )
-parser.add_argument(
-    "--source",
-    "-s",
-    type=str,
-    metavar="source",
-    help="Source to pull data from. Ignored if running in default mode",
+# merge mode subparser
+mergeSubparser = subparser.add_parser(
+    "merge",
+    help="Merge from the staging table the exisiting data",
 )
+# delta mode subparser
+deltaSubparser = subparser.add_parser(
+    "delta",
+    parents=[sourceCountryParser, deltaParser],
+    help="Load number of days prior to sysdate from specified source",
+)
+# between mode subparser
+betweenSubparser = subparser.add_parser(
+    "between",
+    parents=[sourceCountryParser, betweenParser],
+    help="Load from fromDate to toDate arguments from specified source",
+)
+
+args = parser.parse_args()
+
+# worker function to fetch data
+def worker(params):
+    print(params)
+    sourceName = params["sourceName"]
+    dataSourceClass = getattr(import_module(f"sources.{sourceName}"), sourceName)
+    dataSourceObj = dataSourceClass()
+    if params["method"] =="between":
+        dataSourceObj.getDataBetween(params["country"], params["fromDate"], params["toDate"])
+    else:
+        dataSourceObj.getDataDelta(params["country"], params["delta"])
+    del dataSourceObj
+    return
 
 
 # main function
@@ -72,12 +128,26 @@ def main():
     try:
         logger.info("Job Started")
         cases = casesData()
-        cases.truncateStaging()
-        from sources.covid19api import covid19api
-        c19api = covid19api()
-        # c19api.getDataBetween("au",date.today(),date.today())
-        c19api.getDataDelta("au",4)
-        del c19api
+        if args.mode != "merge":
+            cases.truncateStaging()
+            if args.mode == "default":
+                pool = Pool(config.pool_size)
+                cnxn = connectDB()
+                with cnxn.cursor(dictionary=True) as cursor:
+                    cursor.execute(queries.getLoadedConfigs)
+                    for loadedConfig in cursor.fetchall():
+                        #pool.apply_async(worker,(loadedConfig),)
+                        worker(loadedConfig)
+                    cursor.close()
+                cnxn.close()
+            else:
+                if args.mode == "full":
+                    worker({"sourceName":args.source, "country":args.country, "method":"between", "fromDate":"2018-01-01", "toDate":date.today()})
+                elif args.mode == "delta":
+                    worker({"sourceName":args.source, "country":args.country, "method":"delta", "delta":args.delta})
+                elif args.mode == "between":
+                    worker({"sourceName":args.source, "country":args.country, "method":"between", "fromDate":args.fromDate, "toDate":args.toDate})
+        cases.mergeDataIntoCases(jobId)
     except Exception as err:
         logger.exception(err)
         sys.exit(1)
