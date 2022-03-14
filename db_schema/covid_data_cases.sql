@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `covid_data` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `covid_data`;
 -- MySQL dump 10.13  Distrib 8.0.28, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: covid_data
@@ -25,23 +23,24 @@ DROP TABLE IF EXISTS `cases`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `cases` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `casesId` int unsigned NOT NULL AUTO_INCREMENT,
   `sourceId` int unsigned NOT NULL,
   `sourceKey` varchar(200) DEFAULT NULL,
   `locationId` int unsigned NOT NULL,
-  `active` int unsigned DEFAULT NULL,
-  `recovered` int unsigned DEFAULT NULL,
   `deaths` int unsigned DEFAULT NULL,
-  `date` datetime NOT NULL,
+  `recovered` int unsigned DEFAULT NULL,
+  `active` int unsigned DEFAULT NULL,
+  `date` date NOT NULL,
+  `jobId` bigint unsigned NOT NULL,
   `dateInserted` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `dateModified` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_UNIQUE` (`id`),
+  PRIMARY KEY (`casesId`),
+  UNIQUE KEY `sourceId_sourceKey_date_UNIQUE` (`sourceId`,`locationId`,`date`),
   KEY `FK_cases_locationId_idx` (`locationId`),
   KEY `FK_cases_sourceId_idx` (`sourceId`),
   CONSTRAINT `FK_cases_locationId` FOREIGN KEY (`locationId`) REFERENCES `locations` (`locationId`),
   CONSTRAINT `FK_cases_sourceId` FOREIGN KEY (`sourceId`) REFERENCES `sources` (`sourceId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=41635 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -53,4 +52,4 @@ CREATE TABLE `cases` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-03-10  8:58:48
+-- Dump completed on 2022-03-14 17:08:26

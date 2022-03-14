@@ -6,7 +6,6 @@ from multiprocessing.pool import ThreadPool as Pool
 import sys
 
 from common import connectDB
-
 import settings as config
 import queries
 from casesData import casesData
@@ -18,7 +17,7 @@ jobId = int((datetime.now() - datetime(2022, 1, 1, 0, 0, 0)).total_seconds() * 1
 # Define logging file
 logging.basicConfig(
     filename=config.logging_folder + "\\" + config.logging_suffix + date.today().strftime("%Y%m%d") + ".log",
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s " + str(jobId) + " %(levelname)s %(funcName)s %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -111,20 +110,47 @@ args = parser.parse_args()
 
 # worker function to fetch data
 def worker(params):
-    print(params)
-    sourceName = params["sourceName"]
-    dataSourceClass = getattr(import_module(f"sources.{sourceName}"), sourceName)
-    dataSourceObj = dataSourceClass()
-    if params["method"] =="between":
-        dataSourceObj.getDataBetween(params["country"], params["fromDate"], params["toDate"])
-    else:
-        dataSourceObj.getDataDelta(params["country"], params["delta"])
-    del dataSourceObj
+    loadStartTime = datetime.now()
+    result = 0
+    try:
+        sourceName = params["sourceName"]
+        dataSourceClass = getattr(import_module(f"sources.{sourceName}"), sourceName)
+        dataSourceObj = dataSourceClass()
+        if params["method"] =="between":
+            dataSourceObj.getDataBetween(params["country"], params["fromDate"], params["toDate"])
+        else:
+            dataSourceObj.getDataDelta(params["country"], params["delta"])
+        del dataSourceObj
+        result = 1
+    except Exception as err:
+        logger.exception(err)
+    finally:
+        loadEndTime = datetime.now()
+        try:
+            cnxn = connectDB()
+            with cnxn.cursor() as cursor:
+                cursor.execute(queries.insertIntoLoadResult.format(
+                    sourceName = params["sourceName"],
+                    country = params["country"],
+                    method = params["method"],
+                    fromDate = 'NULL' if params.get("fromDate") is None else (params["fromDate"]).strftime('%Y%m%d'),
+                    toDate = 'NULL' if params.get("toDate") is None else (params["toDate"]).strftime('%Y%m%d'),
+                    delta = 'NULL' if params.get("delta") is None else params["delta"],
+                    jobId = jobId,
+                    result = result,
+                    loadStartTime = loadStartTime,
+                    loadEndTime = loadEndTime))
+                cnxn.commit()
+                cursor.close()
+        except Exception as err:
+            logger.exception(f"Failed to update ingestion result to the database")
     return
 
 
 # main function
 def main():
+    jobStartTime = datetime.now()
+    result = 0
     try:
         logger.info("Job Started")
         cases = casesData()
@@ -135,19 +161,18 @@ def main():
                 cnxn = connectDB()
                 with cnxn.cursor(dictionary=True) as cursor:
                     cursor.execute(queries.getLoadedConfigs)
-                    for loadedConfig in cursor.fetchall():
-                        #pool.apply_async(worker,(loadedConfig),)
-                        worker(loadedConfig)
+                    pool.map(worker,cursor.fetchall())
                     cursor.close()
                 cnxn.close()
             else:
                 if args.mode == "full":
-                    worker({"sourceName":args.source, "country":args.country, "method":"between", "fromDate":"2018-01-01", "toDate":date.today()})
+                    worker({"sourceName":args.source, "country":args.country, "method":"between", "fromDate":datetime.strptime("2000-01-01", "%Y-%m-%d"), "toDate":date.today()})
                 elif args.mode == "delta":
                     worker({"sourceName":args.source, "country":args.country, "method":"delta", "delta":args.delta})
                 elif args.mode == "between":
                     worker({"sourceName":args.source, "country":args.country, "method":"between", "fromDate":args.fromDate, "toDate":args.toDate})
         cases.mergeDataIntoCases(jobId)
+        result = 1
     except Exception as err:
         logger.exception(err)
         sys.exit(1)
@@ -155,12 +180,23 @@ def main():
         del cases
         sys.exit(0)
     finally:
+        jobEndTime = datetime.now()
+        try:
+            cnxn = connectDB()
+            with cnxn.cursor() as cursor:
+                cursor.execute(queries.insertIntoJobResult.format(
+                    jobId = jobId,
+                    result = result,
+                    jobStartTime = jobStartTime,
+                    jobEndTime = jobEndTime))
+                cnxn.commit()
+                cursor.close()
+        except Exception as err:
+            logger.exception(f"Failed to update ingestion result to the database")
         logger.info("Job Completed")
 
 
 main()
 
-
-
-
-
+# consider list comprehension
+#

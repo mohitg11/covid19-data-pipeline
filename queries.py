@@ -76,3 +76,39 @@ getLoadedConfigs = """
     FROM `catalog`.`config_loads` cl
     INNER JOIN `covid_data`.`sources` s ON cl.`sourceId` = s.`sourceId`
     WHERE cl.`dateDeleted` IS NULL;"""
+
+insertIntoLoadResult = """
+    INSERT INTO `catalog`.`load_result` (
+         `sourceName`
+        ,`country`
+        ,`method`
+        ,`fromDate`
+        ,`toDate`
+        ,`delta`
+        ,`jobId`
+        ,`result`
+        ,`loadStartTime`
+        ,`loadEndTime`)
+    VALUES (
+         '{sourceName}'
+        ,'{country}'
+        ,'{method}'
+        ,{fromDate}
+        ,{toDate}
+        ,{delta}
+        ,{jobId}
+        ,{result}
+        ,'{loadStartTime}'
+        ,'{loadEndTime}');"""
+
+insertIntoJobResult = """
+    INSERT INTO `catalog`.`job_result` (
+        `jobId`,
+        `result`,
+        `jobStartTime`,
+        `jobEndTime`)
+    VALUES (
+        {jobId},
+        {result},
+        '{jobStartTime}',
+        '{jobEndTime}');"""

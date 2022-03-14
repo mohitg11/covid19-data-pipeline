@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `covid_data` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `covid_data`;
 -- MySQL dump 10.13  Distrib 8.0.28, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: covid_data
@@ -31,11 +29,12 @@ CREATE TABLE `locations` (
   `province` varchar(200) DEFAULT NULL,
   `lat` float NOT NULL,
   `lon` float NOT NULL,
+  `jobId` bigint unsigned NOT NULL,
   `dateInserted` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `dateModified` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`locationId`),
-  UNIQUE KEY `LocationId_UNIQUE` (`locationId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `lan_lon_UNIQUE` (`lat`,`lon`)
+) ENGINE=InnoDB AUTO_INCREMENT=146 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -47,4 +46,4 @@ CREATE TABLE `locations` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-03-10  8:58:48
+-- Dump completed on 2022-03-14 17:08:25
