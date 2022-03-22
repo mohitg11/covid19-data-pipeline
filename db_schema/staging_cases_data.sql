@@ -30,9 +30,9 @@ CREATE TABLE `cases_data` (
   `province` varchar(200) DEFAULT NULL,
   `lat` float NOT NULL,
   `lon` float NOT NULL,
-  `deaths` int unsigned DEFAULT NULL,
-  `recovered` int unsigned DEFAULT NULL,
-  `active` int unsigned DEFAULT NULL,
+  `deaths` int DEFAULT NULL,
+  `recovered` int DEFAULT NULL,
+  `active` int DEFAULT NULL,
   `date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -46,4 +46,4 @@ CREATE TABLE `cases_data` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-03-14 17:08:26
+-- Dump completed on 2022-03-23  0:19:38

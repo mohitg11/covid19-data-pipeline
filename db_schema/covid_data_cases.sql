@@ -27,20 +27,20 @@ CREATE TABLE `cases` (
   `sourceId` int unsigned NOT NULL,
   `sourceKey` varchar(200) DEFAULT NULL,
   `locationId` int unsigned NOT NULL,
-  `deaths` int unsigned DEFAULT NULL,
-  `recovered` int unsigned DEFAULT NULL,
-  `active` int unsigned DEFAULT NULL,
+  `deaths` int DEFAULT NULL,
+  `recovered` int DEFAULT NULL,
+  `active` int DEFAULT NULL,
   `date` date NOT NULL,
   `jobId` bigint unsigned NOT NULL,
   `dateInserted` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `dateModified` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`casesId`),
-  UNIQUE KEY `sourceId_sourceKey_date_UNIQUE` (`sourceId`,`locationId`,`date`),
+  UNIQUE KEY `sourceId_locationId_date_UNIQUE` (`sourceId`,`locationId`,`date`),
   KEY `FK_cases_locationId_idx` (`locationId`),
   KEY `FK_cases_sourceId_idx` (`sourceId`),
   CONSTRAINT `FK_cases_locationId` FOREIGN KEY (`locationId`) REFERENCES `locations` (`locationId`),
   CONSTRAINT `FK_cases_sourceId` FOREIGN KEY (`sourceId`) REFERENCES `sources` (`sourceId`)
-) ENGINE=InnoDB AUTO_INCREMENT=41635 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=41760 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -52,4 +52,4 @@ CREATE TABLE `cases` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-03-14 17:08:26
+-- Dump completed on 2022-03-23  0:19:40

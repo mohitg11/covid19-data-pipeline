@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.28, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: catalog
+-- Host: 127.0.0.1    Database: covid_data
 -- ------------------------------------------------------
 -- Server version	8.0.28
 
@@ -16,27 +16,22 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `load_result`
+-- Table structure for table `population`
 --
 
-DROP TABLE IF EXISTS `load_result`;
+DROP TABLE IF EXISTS `population`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `load_result` (
-  `loadResultId` int unsigned NOT NULL AUTO_INCREMENT,
-  `sourceName` varchar(200) NOT NULL,
-  `country` varchar(200) NOT NULL,
-  `method` varchar(10) NOT NULL,
-  `fromDate` date DEFAULT NULL,
-  `toDate` date DEFAULT NULL,
-  `delta` int unsigned DEFAULT NULL,
-  `jobId` bigint unsigned NOT NULL,
-  `result` tinyint unsigned NOT NULL,
-  `loadStartTime` datetime NOT NULL,
-  `loadEndTime` datetime NOT NULL,
-  `insertDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`loadResultId`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `population` (
+  `populationId` int unsigned NOT NULL AUTO_INCREMENT,
+  `locationId` int unsigned NOT NULL,
+  `population` bigint NOT NULL,
+  `startDate` date NOT NULL,
+  `endDate` date DEFAULT NULL,
+  PRIMARY KEY (`populationId`),
+  KEY `FK_locationId_idx` (`locationId`),
+  CONSTRAINT `FK_locationId` FOREIGN KEY (`locationId`) REFERENCES `locations` (`locationId`)
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -48,4 +43,4 @@ CREATE TABLE `load_result` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-03-23  0:19:39
+-- Dump completed on 2022-03-23  0:19:40
